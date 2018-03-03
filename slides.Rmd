@@ -1,0 +1,916 @@
+---
+title: "R and RStudio Training"
+author: Wei Luo
+output:
+  rmdshower::shower_presentation:
+    self_contained: false
+    katex: true
+    ratio: 16x10
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+
+
+swjpg <- system.file('examples', 'sw.jpg', package = 'rmdshower')
+scifi <- system.file('examples', 'scifi.jpg', package = 'rmdshower')
+
+
+```
+
+## R and RStudio Training { .white }
+
+<img src="`r scifi`" class="cover">
+
+
+<p class="white">
+Wei Luo
+</p>
+
+School of Information Technology
+
+Deakin University
+
+
+## Agenda for today
+
+### Morning
+
+#### Session 1. Your learning needs; R and RStudio overview
+#### Session 2. Data importing and exporting
+#### Session 3. Data cleaning and processing
+
+### Afternoon
+
+### Session 4. Descriptive analytics in R
+### Session 5. Data visualisation in R
+### Session 6. Hands-on; Risk analysis (if time allows)
+
+
+
+
+
+## Introduction: About myself
+
+Wei Luo 
+
+* Using R since the year 2005
+* Teaching a grad unit in statistical data analysis
+
+## Introduction: About you
+
+1. Your name
+2. What do you do?
+3. Why interested in this workshop?
+1. Familiar with statistics?
+1. Familiar with R?
+1. What data did you bring?
+
+## Introduction: About R
+
+A language for statistical computing
+<div class="double">
+<p class="double-flow">
+Pros:
+
+1. Open source
+1. Free packages by statisticians
+1. Interactive
+
+</p><p class="double-flow">
+Cons: 
+
+1. Domain specific
+1. Slow sometimes
+1. Base R can be quirky sometimes
+</p>
+</div>
+
+## An example 
+
+The New Zealand Tourism Dashboard
+https://mbienz.shinyapps.io/tourism_dashboard_prod/
+
+## R in Data Science
+
+
+indeed.com Data Scientist job ads in the USA (source: kdnuggets.com)
+
+<img src="images/indeed-data-scientist-jobs-python-r2017.jpg">
+
+
+# What do you want to learn about R?
+
+
+# Here is what we will do today
+
+
+## Analyse and clean up a data file 
+```{r eval=FALSE}
+ed_data_link <- "http://data.gov.au/dataset/6bfec5ea-207e-4d67-8965-c7e72290844b/resource/33d84954-b13a-4f4e-afb9-6468e287fa3c/download/govhack3.csv";
+
+## Clean up the column names
+library(tidyverse)
+
+facilities <- 
+  read_csv(ed_data_link, col_names = FALSE, n_max = 1) %>% 
+  gather(key, value) %>% 
+  filter(!is.na(value)) %>%  
+  .$value
+
+column_names <- 
+  read_csv(ed_data_link, n_max = 1) %>% 
+  gather(key, value) %>% 
+  .$value %>% 
+  make.unique
+
+column_names[2:8] <- str_c(column_names[2:8], '0', sep='.')
+```
+
+## Import data into R
+```{r eval=FALSE}
+daily_attendance <- 
+  read_csv(ed_data_link, skip = 2, col_names = column_names) %>% 
+  gather(index, value, -Date) %>% 
+  separate(index, 
+           into = c("index", "facility_id"), 
+           sep="\\.", 
+           remove=TRUE) %>% 
+  mutate(facility_id = as.numeric(facility_id) + 1) %>% 
+  mutate(facility_name = facilities[facility_id]) %>% 
+  select(Date, facility_name, index, value)
+```
+
+## Export R data to a file
+```{r eval=FALSE}
+daily_attendance %>%
+  write_csv(path = "Perth_ED_daily_attendance_2013_2014.csv")
+```
+
+
+
+## Deal with missing values
+```{r eval=FALSE}
+daily_attendance <- 
+  daily_attendance %>% 
+  mutate(value = as.numeric(value)) %>% 
+  replace_na(replace = list(value = 0)) 
+
+```
+
+
+## Convert data types
+```{r eval=FALSE}
+## Processing date time
+library(lubridate)
+daily_attendance <- 
+  daily_attendance %>% 
+  mutate(Date = dmy(Date))
+```
+
+## Interact with data in R
+```{r echo=FALSE, message=FALSE, warning=FALSE, eval=TRUE}
+library(tidyverse)
+daily_attendance <- read_csv("Perth_ED_daily_attendance_2013_2014.csv")
+
+library(DT)
+daily_attendance %>% head %>% 
+  datatable
+```
+
+## Graphical display of data
+```{r echo=FALSE, message=FALSE, eval=TRUE, warning=FALSE}
+library(lubridate)
+
+daily_attendance <- read_csv("Perth_ED_daily_attendance_2013_2014.csv")
+
+daily_attendance %>% 
+  mutate(Date = dmy(Date)) %>% 
+  ggplot() + 
+  geom_line(mapping = aes(x = Date, y = Attendance, col = facility_name))
+```
+
+## Fitting statistical models on data
+```{r echo=FALSE, eval=TRUE}
+daily_attendance %>% 
+  filter(!facility_name %in% c(
+    "Swan District Hospital",
+    "King Edward Memorial Hospital For Women",
+    "Rockingham General Hospital")) %>% 
+  ggplot(mapping = aes(x = Attendance, y = Admissions)) + 
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "lm", se = FALSE, color = "firebrick") +
+  facet_wrap(~facility_name)
+```
+
+# Getting to know RStudio
+
+## Four panes
+<div class="double">
+<p class="double-flow">
+<img src="images/rstudio-300x260.png" class="one-col-image">
+</p>
+<p class="double-flow">
+CODE pane for writing code
+
+CONSOLE pane for interactive execution
+
+PLOT pane for plot results and help files
+</p>
+</div>
+
+## Help tab in the PLOT pane
+<p class="note">
+1. Try find the RStudio Cheat Sheets from the PLOT pane
+2. Try look for the documentation for the R operator `<-`
+<p>
+
+## Load the workshop R Script
+
+Always create an Rstudio project for your work.
+
+<p class="note">Now create a project and creat a new R script inside the project.</p>
+
+
+# R basics
+
+## Tidy R
+
+There are many ways to program R.
+
+
+We will follow the tidy way:
+
+* RStudio
+* tidyverse
+
+
+
+## Loading R packages
+
+```{r eval=TRUE, message=FALSE}
+library(tidyverse)
+```
+
+# Import the data into R
+
+## R can handle many, many data formats
+
+R can read data from:
+
+* Files (csv, Excel, SAS, SPSS, Stata, ...)
+* Database (MySQL, SQLite, PostgreSQL, ODBC, ...)
+
+<p class="note">See a complete list at https://cran.r-project.org/doc/manuals/r-release/R-data.html</p>
+
+## Introducing the ED dataset
+<p>
+<img src="images/ed_data.png" height="300vh">
+</p>
+
+
+
+
+<p class="note">https://data.gov.au/dataset/emergency-department-admissisons-and-attendances/resource/33d84954-b13a-4f4e-afb9-6468e287fa3c</p>
+
+## The data location
+```{r}
+ed_data_link <- 
+  "http://data.gov.au/dataset/6bfec5ea-207e-4d67-8965-c7e72290844b/resource/33d84954-b13a-4f4e-afb9-6468e287fa3c/download/govhack3.csv";
+```
+
+or 
+```{r}
+ed_data_link <- 
+  "http://bit.ly/2nkCUEh"
+```
+
+
+
+<p class="note"> `<-` is the R symbol for variable assignment; You may use `=` too.</p>
+
+## Read CSV file
+
+Tidyverse function `read_csv`
+```{r warning=FALSE, message=FALSE}
+daily_attendance <- read_csv(ed_data_link, skip = 1)
+```
+
+## Read CSV file
+Try to read in the weather data in the `nycflights` dataset from https://raw.githubusercontent.com/hadley/nycflights13/master/data-raw/weather.csv
+
+or
+
+http://bit.ly/2E0Y1o9
+
+## Read CSV file
+```{r}
+weather <- read_csv("https://raw.githubusercontent.com/hadley/nycflights13/master/data-raw/weather.csv") 
+```
+
+or 
+```{r}
+weather <- read_csv("http://bit.ly/2E0Y1o9") 
+```
+
+## Read CSV file
+What if you only want the first row?
+```{r eval=FALSE}
+top_row <- read_csv(ed_data_link, col_names = FALSE, n_max = 1)
+```
+How about the second row?
+```{r eval=FALSE}
+second_row <- read_csv(ed_data_link, n_max = 1)
+```
+
+## Your turn
+
+<p class="note"> `Find a data set that you know. Load it into R. </p>
+
+## Summary
+
+To read a CSV file, use `read_csv`. 
+
+You can control:
+
+* Where is the header?
+* How many rows to read?
+
+# Display data
+
+## Display data with datatable
+```{r}
+library(DT)
+datatable(daily_attendance)
+```
+
+
+## Display data with datatable
+```{r}
+library(DT)
+datatable(daily_attendance)
+```
+
+<p class="note"> Display your data using datatable. Can you use the sorting and search functions to interrogate the data? </p>
+
+#Data Transformation
+
+## Cleaning up column names
+
+Let's also clean up the column names.
+```{r eval=FALSE}
+column_names <- second_row %>% 
+  unlist(., use.names=FALSE) %>% 
+  make.unique
+
+column_names[2:8] <- str_c(column_names[2:8], '0', sep='.')
+```
+
+<p class="note">pipe: `%>%` is a tidyverse operator to apply a sequence of operations</p>
+
+## Cleaning up column names
+This allows us to read the data with more readable column names.
+```{r eval=FALSE}
+daily_attendance <- 
+  read_csv(ed_data_link, skip = 2, col_names = column_names)
+``` 
+
+## Your turn
+
+Do you have any columns in your data set that needs to be renamed?
+
+## Tidy data (the ideal)
+
+<img src="images/tidy-1.png" width="50%">
+
+From Hadley
+
+> 1. Each variable must have its own column.
+> 2. Each observation must have its own row.
+> 3. Each value must have its own cell.
+
+
+
+
+## Tidy data
+
+Check the following data tables from tidyverse and see which ones are untidy.
+
+```{r eval=FALSE}
+library(DT)
+datatable(table1)
+datatable(table2)
+datatable(table4a)
+```
+
+## Tidy data
+
+<p class="note">Is our ED dataset tidy?</p>
+
+## Your turn
+
+Is your data set tidy?
+
+- What are the variables?
+- What is an observation?
+- Do you have values in the heading?
+- Do you have variables names in a column?
+
+
+## Gather and spread to tidy data
+<div class="double">
+<p class="double-flow">
+gather
+
+<img src="images/tidy-9.png" width="150%">
+</p>
+<p class="double-flow">
+spread
+
+<img src="images/tidy-8.png" width="110%">
+</p>
+</div>
+
+
+
+
+## Gather and spread to tidy data
+
+Our ED data is untidy. We will tidy it up in two steps: first gather; then spread.
+
+Gather:
+```{r eval=FALSE}
+daily_attendance <- daily_attendance %>% 
+  gather(key = index, value = value, -Date) 
+```
+
+## Gather and spread to tidy data
+This step allows us to process similar variable names.
+```{r eval=FALSE}
+facilities <- top_row %>% 
+  unlist(., use.names=FALSE) %>% 
+  na.omit()
+
+daily_attendance <- daily_attendance %>% 
+  separate(index, into = c("index", "facility_id"), sep="\\.", remove=TRUE) %>% 
+  mutate(facility_id = as.numeric(facility_id) + 1) %>% 
+  mutate(facility_name = facilities[facility_id]) %>% 
+  select(Date, facility_name, index, value)
+```
+
+
+
+
+## Gather and spread to tidy data
+Before we apply spread again, let's deal with the missing values.
+```{r eval=FALSE}
+## Replacing N/A with 0
+daily_attendance <- daily_attendance %>% 
+  mutate(value = as.numeric(value)) %>% 
+  replace_na(replace = list(value = 0)) 
+```
+
+## Gather and spread to tidy data
+Now we use spread to separate out the different types of counts.
+```{r eval=FALSE}
+daily_attendance <- daily_attendance %>% 
+  spread(index, value)
+```
+
+
+## Your turn
+
+If your data is untidy, use spread and gather to tidy it up.
+
+## Summary
+
+You should prepare tidy data for analysis.
+
+The key is to 
+ 
+* put data from the same measurement source in a column
+* put each observation in a row
+
+Use gather and spread to obtain tidy data
+
+
+
+
+# Export data from R
+
+## Write csv file
+
+Let's save the tidy data.
+
+You can use the `write_csv` function.
+```{r}
+write_csv(daily_attendance, 
+          path = "Perth_ED_daily_attendance_2013_2014.csv")
+```
+
+## Your turn
+
+Write your processed data into a CSV file.
+
+# Data preparation for analysis
+
+
+
+
+## Data types
+
+
+```{r eval=TRUE, echo=FALSE, message=FALSE}
+daily_attendance <- read_csv("Perth_ED_daily_attendance_2013_2014.csv")
+```
+
+If you view the dataset in R, you can see that each column has a type.
+```{r eval=TRUE}
+daily_attendance %>% select(1:4)
+```
+
+## Your turn
+
+Examine the data types in your data set. Are they all appropriate?
+
+## Suitable data types 
+
+Suppose that you now have a tidy data set. 
+
+All columns (variables) should have the right data types before analysis.
+
+You can use the following conversion functions:
+
+* For continuous data: `as.numeric` 
+* For categorical data: `as.factor`
+* For strings: `as.character`
+
+## Use mutate function to organise the data type conversion
+
+```{r}
+daily_attendance <- 
+  daily_attendance %>% 
+  mutate(Tri_1_1 = as.numeric(Tri_1_1),
+         Attendance = as.numeric(Attendance))
+```
+
+## Your turn
+
+Use `mutate` to fix the data types in your data set.
+
+## Date and time
+
+Dates and times should be treated differently. 
+
+Identify the data type for `time_hour` in the `weather` data.
+```{r}
+weather 
+```
+
+<p class = "note">Does the `Date` column in daily_attendance has a suitable data type?</p> 
+
+## Use the `lubridate` package
+
+The `lubridate` package has many parsing functions for date and time data.
+
+The function `dmy` is used here.
+```{r}
+library(lubridate)
+
+daily_attendance <- daily_attendance %>% 
+  mutate(Date = dmy(Date))
+```
+
+## Derive additional variables from dates
+
+From dates, we often need to derive other information, such as the day of the week.
+```{r}
+start_date <- daily_attendance$Date[1]
+
+wday(start_date)
+
+wday(start_date, label = TRUE)
+```
+
+<p class="note">On which day should a week start?<p> 
+
+## Quarter 
+
+You can get the quarter of the year.
+```{r}
+quarter(start_date)
+
+quarter(start_date, with_year = TRUE)
+```
+
+## Quarter and Australian financial year
+In Australia, we may want the financial year to start from July. 
+```{r}
+quarter(start_date, with_year = TRUE, fiscal_start = 7)
+```
+
+## Your turn
+
+Process the date or time variables in your data set. 
+
+## Summary
+
+Use `lubridate` to parse strings representing dates and times.
+
+
+## Taking subsets
+
+<img src="images/filter_select.PNG" width = "110%">
+
+We use `filter` to choose rows and `select` to choose columns.
+
+<p class="note">Can you select only the daily admission data for Fremantle Hospital?</p>
+
+
+## Taking subsets
+```{r}
+daily_attendance %>% 
+  filter(facility_name == "Fremantle Hospital") %>% 
+  select(Date, Admissions) %>% 
+  arrange(Date)
+```
+<p class="note">Here, we also sort the results chronologically using the `arrange` function.</p>
+
+## Your turn
+
+Use `filter` and `select` to reduce your data set, keeping only the most interesting parts.
+
+
+## Summary
+
+#### Use `filter` to select the target subset (like `where` in SQL)
+
+#### Use `select` to keep only the relevant variables
+
+# Simple analytics
+
+## Summarise data using simple statistics
+
+With `summarise`, we can compute simple statistics on individual columns. 
+```{r}
+daily_attendance %>% 
+  summarise(peak_admission = max(Admissions),
+            avg_admission = mean(Admissions),
+            bottom_admission = min(Admissions))
+```
+
+<p class="note">Can you get the average number of daily attendances?</p>
+
+## Summarise data using simple statistics
+```{r}
+daily_attendance %>% 
+  summarise(avg_attendance = mean(Attendance))
+```
+
+
+## Summarise data using simple statistics
+We can compute the statics for many columns.
+```{r}
+daily_attendance %>% 
+  summarise_at(vars("Tri_1",         
+                    "Tri_2",
+                    "Tri_3",
+                    "Tri_4",
+                    "Tri_5"),
+               funs( 
+                 peak = max,
+                 avg = mean,
+                 bottom = min))
+```
+
+## Your turn
+
+Use `summarise` and `summarise_at` to generate some overall statistics in your dataset.
+
+## Summarise data by goups
+Of course such statistics are not very useful if no comparison happens.
+```{r}
+daily_attendance %>% 
+  group_by(facility_name) %>% 
+  summarise(avg_tri_1 = mean(Tri_1)) %>% 
+  arrange(desc(avg_tri_1))
+```
+<p class="note">Here, I sort the result from large to small as I want to know which hospitals get severe cases.</p>
+
+## Your turn
+
+Use `group_by` together with `summarise` and `arrange` to compare across groups.
+
+## Summary
+
+Use `summarise` to generate summary statistics.
+
+Use it with `group_by` to allow for comparison.
+
+<p class="note">We will soon see how such comparison can be understood with graphics.</p>
+
+# Simple visualisations
+
+## Why do we need plots?
+
+Plots can show:
+
+1. Variation within a variable
+2. Relationship among variables
+
+## Common types of plots 
+
+For variation (distribution)
+
+* bar chart (categorical data)
+* histogram (continuous data)
+* box plot (continuous data)
+* Quantile-Quantile plot (continuous data)
+
+## Common types of plots 
+
+For relationship
+
+* point plot (two continuous variables)
+* line plot (continuous vs time)
+
+
+
+## ggplot2
+
+Three elements of a data plot.
+
+1. a dataset 
+2. a geom function (`geom_*`)
+3. a collection of mappings (`aes`)
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+## ggplot2
+
+In general, we have the following template.
+```
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
+```
+
+<img src="images/geom_mapping.png" width="80%">
+
+## ggplot2
+
+The `<GEOM_FUNCTION>` is determined by the plot type:
+
+* `geom_bar`
+* `geom_histogram`
+* `geom_boxplot`
+* `geom_point`
+* `geom_line`
+
+The `<MAPPINGS>` binds data columns with graphical elements of the `<GEOM_FUNCTION>`.
+
+## ggplot2
+
+Let's generate some plots to understand the ED attendance data from Royal Perth Hospital.
+```{r}
+rph_attendance <- daily_attendance %>% 
+  filter(facility_name == "Royal Perth Hospital") %>% 
+  select(-facility_name)
+```
+
+## ggplot2
+
+
+Let's look at the distribution of Admissions.
+```{r}
+rph_attendance %>% 
+  ggplot() + geom_histogram(mapping = aes(x = Admissions))
+```
+
+<p class = "note">Do you see any outliers?</p>
+
+## Your turn
+Go to your dataset. 
+
+- If it has a continuous variable, generate a histogram.
+- If it has a categorical variable, generate a barplot.
+
+## ggplot2
+
+The numbers form several time series.
+```{r}
+rph_attendance %>% 
+  ggplot() + geom_line(mapping = 
+                         aes(x = Date,
+                             y = Admissions))
+```
+<p class="note">Do you see where the outlier come from?</p>
+
+
+## Your turn
+
+Can you plot a time series from your data?
+
+## ggplot2
+
+If you like to check if the dip in admissions happened to other hospitals, you can plots two time series together. 
+```{r}
+daily_attendance %>% 
+  filter(facility_name %in% c("Royal Perth Hospital", 
+                              "Fremantle Hospital")) %>% 
+  ggplot() + 
+  geom_line(
+    mapping = aes(x = Date, 
+                  y = Admissions, 
+                  col = facility_name))
+```
+
+<p class="note">Can you compare the daily attendance numbers between Royal Perth Hospital and Fremantle Hospital?</p>
+
+
+## gpplot2 
+```{r}
+daily_attendance %>% 
+  filter(facility_name %in% c("Royal Perth Hospital", 
+                              "Fremantle Hospital")) %>% 
+  ggplot() + 
+  geom_line(
+    mapping = aes(x = Date, 
+                  y = Attendance, 
+                  col = facility_name))
+```
+
+
+## Your turn
+
+With your data, can you plot multiple time series at the same time for comparison?
+
+## Summary
+
+
+The suitable plot type depends on both the question and the variable data types.
+
+Tidy data makes plotting easy.
+
+# Simple statistical models
+
+
+
+
+## Fitting statistical models
+
+R is probably the best language for fitting statistical models.
+```{r}
+adm_fit <- lm(formula = Admissions ~ Attendance, 
+              data = daily_attendance)
+
+library(broom)
+tidy(adm_fit) 
+```
+
+
+## Showing the fit 
+
+We can use `geom_smooth` to plot the fitted regression model together with the data.
+```{r}
+daily_attendance %>% 
+  ggplot(mapping = aes(x = Attendance, y = Admissions)) + 
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "lm", se = FALSE, color = "firebrick") +
+  facet_wrap(~facility_name)
+```
+
+```{r}
+3+5
+```
+
+
+## Your turn
+
+Generate a scatter plot if your data has two continuous variables that may be causally related. 
+
+Use `geom_smooth` to add a regression model over the plot.
+
+## Summary
+
+### R provides many model fitting functions
+
+### `geom_smooth` can allow fitting models displayed with the data
+
+
+## Additional resources
+
+### R for Data Science by Garrett Grolemund and Hadley Wickham
+http://r4ds.had.co.nz/
+
+
+### RStudio cheat sheets
+https://www.rstudio.com/resources/cheatsheets/
+
+
+# Questions and discussions
+
+
